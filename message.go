@@ -149,7 +149,7 @@ func parseUser(message *ircMessage) User {
 		}
 	} else {
 		// https://dev.twitch.tv/docs/chat/irc/#privmsg-tags
-		isBroadcaster = message.Tags["user-id"] == message.Tags["room-id"]
+		isBroadcaster = message.Tags["user-id"] == message.Tags["room-id"] && message.Tags["user-id"] != ""
 
 		_, isVip = message.Tags["vip"]
 		if value, tagFound := message.Tags["mod"]; tagFound {
