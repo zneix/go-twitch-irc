@@ -139,14 +139,14 @@ func parseUser(message *ircMessage) User {
 	userBadges := make(map[string]int)
 	if rawBadges := message.Tags["badges"]; rawBadges != "" {
 		userBadges = parseBadges(rawBadges)
-		// USERSTATE doesn't contain "vip" tag (even if the user is a VIP), we have to check user's badges for that
-		for badge := range userBadges {
-			switch badge {
-			case "vip":
-				isVip = true
-			case "moderator", "lead_moderator":
-				isMod = true
-			}
+		// Badges are the primary source for VIP/mod role detection
+		// Some messages (such as USERSTATE) may omit "vip" tag, so we use badges for that when they're present
+		if _, ok := userBadges["vip"]; ok {
+			isVip = true
+		} else if _, ok := userBadges["moderator"]; ok {
+			isMod = true
+		} else if _, ok := userBadges["lead_moderator"]; ok {
+			isMod = true
 		}
 	} else {
 		_, isVip = message.Tags["vip"]
