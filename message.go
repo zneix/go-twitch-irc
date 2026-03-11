@@ -135,9 +135,24 @@ func parseUser(message *ircMessage) User {
 
 	// https://dev.twitch.tv/docs/chat/irc/#privmsg-tags
 	isBroadcaster = message.Tags["user-id"] == message.Tags["room-id"]
-	_, isVip = message.Tags["vip"]
-	if value, tagFound := message.Tags["mod"]; tagFound {
-		isMod = value == "1"
+
+	userBadges := make(map[string]int)
+	if rawBadges := message.Tags["badges"]; rawBadges != "" {
+		userBadges = parseBadges(rawBadges)
+		// Badges are the primary source for VIP/mod role detection
+		// Some messages (such as USERSTATE) may omit "vip" tag, so we use badges for that when they're present
+		if _, ok := userBadges["vip"]; ok {
+			isVip = true
+		} else if _, ok := userBadges["moderator"]; ok {
+			isMod = true
+		} else if _, ok := userBadges["lead_moderator"]; ok {
+			isMod = true
+		}
+	} else {
+		_, isVip = message.Tags["vip"]
+		if value, tagFound := message.Tags["mod"]; tagFound {
+			isMod = value == "1"
+		}
 	}
 
 	user := User{
@@ -145,14 +160,10 @@ func parseUser(message *ircMessage) User {
 		Name:          message.Source.Username,
 		DisplayName:   message.Tags["display-name"],
 		Color:         message.Tags["color"],
-		Badges:        make(map[string]int),
+		Badges:        userBadges,
 		IsBroadcaster: isBroadcaster,
 		IsMod:         isMod,
 		IsVip:         isVip,
-	}
-
-	if rawBadges := message.Tags["badges"]; rawBadges != "" {
-		user.Badges = parseBadges(rawBadges)
 	}
 
 	// USERSTATE doesn't contain a Username, but it does have a display-name tag

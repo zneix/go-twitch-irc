@@ -962,3 +962,42 @@ func TestCanParseSharedChatMessageWithEmptySourceBadges(t *testing.T) {
 		assertStringIntMapsEqual(t, expectedBadges, privateMessage.Source.Badges)
 	}
 }
+
+func TestUserStateMessageFromMod(t *testing.T) {
+	testMessage := "@badge-info=;badges=moderator/1;color=#FF7F50;display-name=TitleChange_Bot;emote-sets=0,300206297,300374282,300548762,472873131,488737509,537206155,564265402,592920959,610186276;id=5f93d69e-13b3-4cd7-a5ee-59c803fa5145;mod=1;subscriber=0;user-type=mod :tmi.twitch.tv USERSTATE #zneix"
+
+	message := ParseMessage(testMessage)
+	userStateMessage := message.(*UserStateMessage)
+
+	if userStateMessage.Type != USERSTATE {
+		t.Error("parsing MessageType failed")
+	}
+	assertBoolEqual(t, true, userStateMessage.User.IsMod)
+	assertBoolEqual(t, false, userStateMessage.User.IsVip)
+}
+
+func TestUserStateMessageFromVip(t *testing.T) {
+	testMessage := "@badge-info=;badges=vip/1;color=#FF7F50;display-name=TitleChange_Bot;emote-sets=0,300206297,300374282,300548762,472873131,488737509,537206155,564265402,592920959,610186276;id=2577475f-93e1-4581-9836-70d4087060f9;mod=0;subscriber=0;user-type= :tmi.twitch.tv USERSTATE #zneix"
+
+	message := ParseMessage(testMessage)
+	userStateMessage := message.(*UserStateMessage)
+
+	if userStateMessage.Type != USERSTATE {
+		t.Error("parsing MessageType failed")
+	}
+	assertBoolEqual(t, false, userStateMessage.User.IsMod)
+	assertBoolEqual(t, true, userStateMessage.User.IsVip)
+}
+
+func TestUserStateMessageFromNonModNonVip(t *testing.T) {
+	testMessage := "@badge-info=;badges=;color=#FF7F50;display-name=TitleChange_Bot;emote-sets=0,300206297,300374282,300548762,472873131,488737509,537206155,564265402,592920959,610186276;id=8f52d7bd-09b2-433e-9cf9-4088e2041aa5;mod=0;subscriber=0;user-type= :tmi.twitch.tv USERSTATE #zneix"
+
+	message := ParseMessage(testMessage)
+	userStateMessage := message.(*UserStateMessage)
+
+	if userStateMessage.Type != USERSTATE {
+		t.Error("parsing MessageType failed")
+	}
+	assertBoolEqual(t, false, userStateMessage.User.IsMod)
+	assertBoolEqual(t, false, userStateMessage.User.IsVip)
+}
