@@ -133,9 +133,6 @@ func parseUser(message *ircMessage) User {
 		isVip         bool
 	)
 
-	// https://dev.twitch.tv/docs/chat/irc/#privmsg-tags
-	isBroadcaster = message.Tags["user-id"] == message.Tags["room-id"]
-
 	userBadges := make(map[string]int)
 	if rawBadges := message.Tags["badges"]; rawBadges != "" {
 		userBadges = parseBadges(rawBadges)
@@ -147,8 +144,13 @@ func parseUser(message *ircMessage) User {
 			isMod = true
 		} else if _, ok := userBadges["lead_moderator"]; ok {
 			isMod = true
+		} else if _, ok := userBadges["broadcaster"]; ok {
+			isBroadcaster = true
 		}
 	} else {
+		// https://dev.twitch.tv/docs/chat/irc/#privmsg-tags
+		isBroadcaster = message.Tags["user-id"] == message.Tags["room-id"] && message.Tags["user-id"] != ""
+
 		_, isVip = message.Tags["vip"]
 		if value, tagFound := message.Tags["mod"]; tagFound {
 			isMod = value == "1"
